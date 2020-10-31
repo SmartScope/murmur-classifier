@@ -1,6 +1,7 @@
 import numpy as np
 
-from scipy.signal import resample
+from scipy.signal import resample, welch
+from scipy import signal
 from scipy.io import loadmat
 from scipy.stats import kurtosis, skew
 
@@ -9,6 +10,8 @@ import librosa.display
 import matplotlib.pyplot as plt
 from segmentation import *
 import matplotlib.pyplot as plt
+
+from statistics import median
 
 def _mean_std(x):
     return (np.mean(x), np.std(x))
@@ -104,9 +107,21 @@ def plot_histogram(signal):
 # plot_histogram(S1_intervals[0])
 
 # Analyze and visualize kurtosis for validation purposes
-print(np.array([kurtosis(interval) for interval in S1_intervals]))
-plot_histogram(S1_intervals[0])
-plot_histogram(S1_intervals[2])
+# print(np.array([kurtosis(interval) for interval in S1_intervals]))
+# plot_histogram(S1_intervals[0])
+# plot_histogram(S1_intervals[2])
+
+
+### Section 2: Frequency domain features
+freqs, pows = welch(S1_intervals[0], fs=2000, window='hamming', nfft=2000)
+print(freqs)
+
+band_indices = np.where((freqs < 45) & (freqs > 25))
+band_powers = pows[band_indices[0][0]:band_indices[0][-1]+1]
+median_band_power = median(band_powers)
+
+plt.plot(freqs, pows)
+plt.show()
 
 # Extract MFCCs
 # signal = np.concatenate(intervals)
