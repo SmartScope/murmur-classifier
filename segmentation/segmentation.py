@@ -3,10 +3,6 @@ import numpy as np
 from scipy.signal import resample
 from scipy.io import loadmat
 
-import librosa
-import librosa.display
-import matplotlib.pyplot as plt
-
 def custom_loadmat(file):
     """
     Simple auxiliary function to load .mat files without
@@ -112,17 +108,3 @@ def get_intervals(pcg, transitions=None, interval='RR', resize=None):
     if resize:
         intervals = [resample(i, resize) for i in intervals]
     return intervals
-
-states = custom_loadmat('state_data.mat')['assigned_states']
-pcg = custom_loadmat('a1.mat')['a1']
-transitions = get_transitions(states)
-intervals = get_intervals(pcg, transitions)
-
-# Extract MFCCs
-signal = np.concatenate(intervals)
-mfccs = librosa.feature.mfcc(y=signal, n_mfcc=13, sr=1000)
-print(mfccs.shape)
-
-librosa.display.specshow(mfccs, x_axis="time", sr=1000)
-plt.colorbar(format="%+2.f")
-plt.show()
