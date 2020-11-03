@@ -13,6 +13,13 @@ import matplotlib.pyplot as plt
 
 from statistics import median
 
+ALENGTH = {
+    'S1':   150,
+    'Sys':  210,
+    'S2':   120,
+    'Dia':  510,
+}
+
 def _mean_std(x):
     return (np.mean(x), np.std(x))
 
@@ -62,10 +69,10 @@ def get_mean_abs(intervals):
 
 # Extract Amplitude Functions
 # get intervals for each S1, Ds, S2, Ss
-S1_intervals = get_intervals(pcg, transitions, 'S1')
-S2_intervals = get_intervals(pcg, transitions, 'S2')
-sys_intervals = get_intervals(pcg, transitions, 'Sys')
-dias_intervals = get_intervals(pcg, transitions, 'Dia')
+S1_intervals = get_intervals(pcg, transitions, 'S1', resize=ALENGTH['S1'])
+S2_intervals = get_intervals(pcg, transitions, 'S2', resize=ALENGTH['S2'])
+sys_intervals = get_intervals(pcg, transitions, 'Sys', resize=ALENGTH['Sys'])
+dias_intervals = get_intervals(pcg, transitions, 'Dia', resize=ALENGTH['Dia'])
 
 mean_abs_S1 = get_mean_abs(S1_intervals)
 mean_abs_S2 = get_mean_abs(S2_intervals)
@@ -113,27 +120,56 @@ def plot_histogram(signal):
 
 
 ### Section 2: Frequency domain features
-freqs, pows = welch(S1_intervals[0], fs=2000, window='hamming', nfft=2000)
-print(freqs)
+def calc_median_power_mean(intervals):
+    band_medians = {
+        "25_45": [],
+        "45_65": [],
+        "65_85": [],
+        "85_105": [],
+        "105_125": [],
+        "125_150": [],
+        "150_200": [],
+        "200_300": [],
+        "300_400": []
+    }
 
-band_indices = np.where((freqs < 45) & (freqs > 25))
-band_powers = pows[band_indices[0][0]:band_indices[0][-1]+1]
-median_band_power = median(band_powers)
+    for interval in intervals:
+        freqs, pows = welch(interval, fs=2000, window='hamming', nfft=2000)
+        # [20, 30, 40...]
+        # [pow at 20, pow at 30]
+        for band in band_medians:
+            band_start = int(band.split("_")[0])
+            band_end = int(band.split("_")[1])
+            band_indices = np.where((freqs < band_end) & (freqs > band_start))
+            band_powers = pows[band_indices[0][0]:band_indices[0][-1]+1]
+            median_band_power = median(band_powers)
+            band_medians[band].append(median_band_power)
 
-plt.plot(freqs, pows)
-plt.show()
+    results = {}
+    for key in band_medians:
+        results[key] = np.mean(band_medians[key])
+
+    return results
+
+median_power_means = []
+for interval in [S1_intervals, S2_intervals, sys_intervals, dias_intervals]:
+    median_power_means.append(calc_median_power_mean(interval))
+
+# print(calc_median_power_mean(S1_intervals))
+# print(calc_median_power_mean(S2_intervals))
+# print(calc_median_power_mean(sys_intervals))
+# print(calc_median_power_mean(dias_intervals))
 
 # Extract MFCCs
-# signal = np.concatenate(intervals)
-# mfccs = librosa.feature.mfcc(y=signal, n_mfcc=13, sr=1000)
-# print(mfccs.shape)
-# librosa.display.specshow(mfccs, x_axis="time", sr=1000)
-# plt.colorbar(format="%+2.f")
-# plt.show()
+def get_mfcc_means(intervals):
+    mfccs = [[] for i in range(13)]
+    for interval in intervals:
+        mfcc = librosa.feature.mfcc(y=interval, n_mfcc=13, sr=2000)
+        for i in range(13):
+            mfccs[i].append(mfcc[i])
+    results = [np.mean(mfcc) for mfcc in mfccs]
+    return results
 
-# mean_mel = np.mean(mfccs, axis=0)
-# std_mel  = np.std(mfccs, axis=0)
-# print(mean_mel, std_mel)
-
-# Mean and std dev of each of the segments
-# Ratio of systolic to RR intervals
+mfcc_means = []
+for cycle in [S1_intervals, S2_intervals, sys_intervals, dias_intervals]:
+    mfcc_means.append(get_mfcc_means(cycle))
