@@ -29,7 +29,7 @@ def _mean_std(x):
 def diff(t):
     return t[1] - t[0]
 
-def compute_features():
+def compute_features(filename="a0001"):
     # Lengths for each interval.
     ALENGTH = {
         "S1":   150,
@@ -39,8 +39,8 @@ def compute_features():
     }
 
     # Import data
-    states = custom_loadmat('a0001_states.mat')['assigned_states']
-    pcg = custom_loadmat('a0001_audio.mat')['audio']
+    states = custom_loadmat(f"{filename}_states.mat")['assigned_states']
+    pcg = custom_loadmat(f"{filename}_audio.mat")['audio']
     transitions = get_transitions(states)
 
     # Get boundaries
@@ -137,7 +137,6 @@ def compute_features():
         "dias": (kurtosis_dias_mean, kurtosis_dias_std),
     }
 
-
     ### Section 2: Frequency domain features
     def calc_median_power_mean(intervals):
         band_medians = {
@@ -165,17 +164,19 @@ def compute_features():
                 band_medians[band].append(median_band_power)
 
         results = {}
+        results_arr = []
         for key in band_medians:
             results[key] = np.mean(band_medians[key])
+            results_arr.append(np.mean(band_medians[key]))
 
-        return results
+        return results, results_arr
 
     # Feature 0-36 (36 median features)
     median_power_means = {
-        "S1": calc_median_power_mean(S1_intervals),
-        "S2": calc_median_power_mean(S2_intervals),
-        "sys": calc_median_power_mean(sys_intervals),
-        "dias": calc_median_power_mean(dias_intervals),
+        "S1": calc_median_power_mean(S1_intervals)[0],
+        "S2": calc_median_power_mean(S2_intervals)[0],
+        "sys": calc_median_power_mean(sys_intervals)[0],
+        "dias": calc_median_power_mean(dias_intervals)[0],
     }
 
     # Extract MFCCs
@@ -196,21 +197,71 @@ def compute_features():
         "dias": get_mfcc_means(dias_intervals),
     }
 
-    return Features(
-        mean_interval_lengths,
-        interval_length_ratios, 
-        amplitude_ratios, 
-        skew_values, 
-        kurtosis_values, 
-        median_power_means, 
-        mfcc_means
-    )
+    features_arr = [
+        mean_RR, 
+        std_RR,
+        mean_sys, 
+        std_sys,
+        mean_S1, 
+        std_S1,
+        mean_S2, 
+        std_S2,
+        mean_dias,
+        std_dias,
+        mean_ratio_sysRR, 
+        std_ratio_sysRR,
+        mean_ratio_diaRR, 
+        std_ratio_diaRR,
+        mean_ratio_sysDia, 
+        std_ratio_sysDia,
+        _mean_std(mean_abs_sys / mean_abs_S1)[0],
+        _mean_std(mean_abs_sys / mean_abs_S1)[1],
+        _mean_std(mean_abs_dias / mean_abs_S2)[0],
+        _mean_std(mean_abs_dias / mean_abs_S2)[1],
+        skew_S1_mean,
+        skew_S1_std,
+        skew_S2_mean, 
+        skew_S2_std,
+        skew_sys_mean, 
+        skew_sys_std,
+        skew_dias_mean, 
+        skew_dias_std,
+        kurtosis_S1_mean, 
+        kurtosis_S1_std,
+        kurtosis_S2_mean, 
+        kurtosis_S2_std,
+        kurtosis_sys_mean, 
+        kurtosis_sys_std,
+        kurtosis_dias_mean, 
+        kurtosis_dias_std
+    ]
 
-features = compute_features()
-print(features.mean_interval_lengths)
-print(features.interval_length_ratios)
-print(features.amplitude_ratios)
-print(features.skew)
-print(features.kurtosis)
-print(features.median_power_means)
-print(features.mfcc_means)
+    features_arr += calc_median_power_mean(S1_intervals)[1]
+    features_arr += calc_median_power_mean(S2_intervals)[1]
+    features_arr += calc_median_power_mean(sys_intervals)[1]
+    features_arr += calc_median_power_mean(dias_intervals)[1]
+    features_arr += get_mfcc_means(S1_intervals)
+    features_arr += get_mfcc_means(S2_intervals)
+    features_arr += get_mfcc_means(sys_intervals)
+    features_arr += get_mfcc_means(dias_intervals)
+
+    return {
+        "arr": features_arr,
+        "obj": Features(
+            mean_interval_lengths,
+            interval_length_ratios, 
+            amplitude_ratios, 
+            skew_values, 
+            kurtosis_values, 
+            median_power_means, 
+            mfcc_means
+        )
+    }
+
+# print(features.mean_interval_lengths)
+# print(features.interval_length_ratios)
+# print(features.amplitude_ratios)
+# print(features.skew)
+# print(features.kurtosis)
+# print(features.median_power_means)
+# print(features.mfcc_means)
