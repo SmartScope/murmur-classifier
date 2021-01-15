@@ -14,7 +14,7 @@ def remove_prefix(text, prefix):
     return text
 
 def get_data():
-    file_names = ["./challenge_data/c" + str(i).zfill(4) for i in range(1, 32)]
+    file_names = ["./challenge_data/b" + str(i).zfill(4) for i in range(1, 300)]
 
     # get features
     X = []
@@ -34,8 +34,8 @@ def get_data():
 
     return X, y
 
-def get_training_testing_split(X, y, k=2):
-    if k != 2:
+def get_training_testing_split(X, y, k=None):
+    if k is not None:
         kfold = StratifiedKFold(n_splits=k, shuffle=True, random_state=1)
 
         x_trains, x_tests, y_trains, y_tests = [], [], [], []
@@ -56,26 +56,26 @@ def get_training_testing_split(X, y, k=2):
         
         return x_trains, x_tests, y_trains, y_tests
 
-    # Default to train-test split when k = 2
+    # Default to train-test split when k = None
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
     return X_train, X_test, y_train, y_test
 
-def model_validation(X, y, model=None):
-    if model is None:
-        model = AdaBoostClassifier()
-    
-    cv = RepeatedStratifiedKFold(n_splits=3, n_repeats=3, random_state=1)
+def get_model(hyperparamter_optimization=False):
+    if hyperparamter_optimization:
+        param_grid = {
+            "n_estimators": [50, 100, 200],
+            "learning_rate": [0.001, 0.01, 0.2, 0.5]
+        }
+
+        model = GridSearchCV(AdaBoostClassifier(), param_grid=param_grid)
+        return model
+
+    return AdaBoostClassifier()
+
+def evaluate_model(X, y, model=get_model()):
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
     n_scores = cross_val_score(model, X, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise')
     return np.mean(n_scores), np.std(n_scores)
-
-def generate_hyperparameter_optimized_classifier():
-    param_grid = {
-        "n_estimators": [50, 100, 200],
-        "learning_rate": [0.001, 0.01, 0.2, 0.5]
-    }
-
-    clf = GridSearchCV(AdaBoostClassifier(), param_grid=param_grid)
-    return clf
 
 def train_model(X_train, X_test, y_train, y_test, clf=None):
     if clf is None:
@@ -110,19 +110,21 @@ def invoke_model(filename, X_train, X_test, y_train, y_test):
 
 def test_kfold_work():
     x_trains, x_tests, y_trains, y_tests = get_training_testing_split(X, y, k=5)
-    clf = generate_hyperparameter_optimized_classifier()
+    model = get_model(hyperparamter_optimization=True)
     for i in range(len(x_trains)):
         X_train, X_test, y_train, y_test = x_trains[i], x_tests[i], y_trains[i], y_tests[i]
-        train_model(X_train, X_test, y_train, y_test, clf)
+        train_model(X_train, X_test, y_train, y_test, model)
 
 t = time.time()
 X, y = get_data()
-X_train, X_test, y_train, y_test = get_training_testing_split(X, y)
+model = get_model(hyperparamter_optimization=True)
+print(evaluate_model(X, y, model=model))
+# X_train, X_test, y_train, y_test = get_training_testing_split(X, y)
 
-f = time.time()
-print("feature extraction took ", f-t)
-train_model(X_train, X_test, y_train, y_test)
-print("training took ", time.time() - f)
+# f = time.time()
+# print("feature extraction took ", f-t)
+# train_model(X_train, X_test, y_train, y_test)
+# print("training took ", time.time() - f)
 
 # invoke_model("1605112488.sav", X_train, X_test, y_train, y_test)
 

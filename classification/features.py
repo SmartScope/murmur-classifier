@@ -197,6 +197,13 @@ def compute_features(filename="a0001"):
         "dias": get_mfcc_means(dias_intervals),
     }
 
+    def get_spectral_centroid(intervals):
+        scs = []
+        for interval in intervals:
+            sc = librosa.feature.spectral_centroid(y=interval, sr=2000)
+            scs.append(sc)
+        return np.mean(scs)
+
     features_arr = [
         mean_RR, 
         std_RR,
@@ -244,6 +251,11 @@ def compute_features(filename="a0001"):
     features_arr += get_mfcc_means(S2_intervals)
     features_arr += get_mfcc_means(sys_intervals)
     features_arr += get_mfcc_means(dias_intervals)
+
+    features_arr += get_spectral_centroid(S1_intervals)
+    features_arr += get_spectral_centroid(S2_intervals)
+    features_arr += get_spectral_centroid(sys_intervals)
+    features_arr += get_spectral_centroid(dias_intervals)
 
     return {
         "arr": features_arr,
