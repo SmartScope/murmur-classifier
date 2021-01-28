@@ -1,5 +1,4 @@
 import numpy as np
-
 from scipy.signal import resample
 from scipy.io import loadmat
 
@@ -51,7 +50,6 @@ def get_transitions(states):
     transitions = transitions[np.logical_and(transitions >= first, transitions <= last)]
     return transitions
 
-
 def boundaries(transitions, interval='RR'):
     """
     Given array transitions and a interval type
@@ -80,7 +78,6 @@ def boundaries(transitions, interval='RR'):
         'Dia': lambda transitions: (transitions[3::4],   transitions[4::4]),
     }
     return pair_transitions[interval](transitions)
-
 
 def get_intervals(pcg, transitions=None, interval='RR', resize=None):
     """

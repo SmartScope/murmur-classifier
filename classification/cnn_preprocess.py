@@ -9,7 +9,7 @@ import numpy as np
 def frequency_decomposition(pcg, N=60, sr=2000):
     """
     Decomposes a PCG signal into 4 distinct frequency bands of:
-        1. 0 to 45 Hz
+        1. 0 - 45 Hz
         2. 45 - 80 Hz
         3. 80 - 200 Hz
         4. 200 - 400 Hz
@@ -84,7 +84,7 @@ def get_data(json_path="/Users/manthanshah/Desktop/data.json"):
         if num_cardiac_cycles < 32:
             continue
 
-        # Data shape: 32 cycles x 2500 samples / cycle x 4 bands
+        # Data shape: 32 cycles x 1500 samples / cycle x 4 bands
         X = np.zeros(shape=(num_cardiac_cycles, num_samples, num_freq_bands))
 
         for cardiac_cycle in range(num_cardiac_cycles):

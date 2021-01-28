@@ -13,132 +13,125 @@ import matplotlib.pyplot as plt
 
 from statistics import median
 
-class Features:
-    def __init__(self, mean_interval_lengths, interval_length_ratios, amplitude_ratios, skew, kurtosis, median_power_means, mfcc_means):
-        self.mean_interval_lengths = mean_interval_lengths
-        self.interval_length_ratios = interval_length_ratios
-        self.amplitude_ratios = amplitude_ratios
-        self.skew = skew
-        self.kurtosis = kurtosis
-        self.median_power_means = median_power_means
-        self.mfcc_means = mfcc_means
+class FeaturesProcessor:
+    def __init__(self, filename, ALENGTH = {"S1": 150, "Sys": 210, "S2": 120, "Dia":  510}):
+        self.filename = filename
+        self.ALENGTH = ALENGTH
 
-def _mean_std(x):
-    return (np.mean(x), np.std(x))
+    def load_data(self):
+        states = custom_loadmat(f"{self.filename}_states.mat")['assigned_states']
+        pcg = custom_loadmat(f"{self.filename}_audio.mat")['audio']
+        transitions = get_transitions(states)
+        return pcg, transitions
 
-def diff(t):
-    return t[1] - t[0]
+    def _mean_std(self, x):
+        return (np.mean(x), np.std(x))
 
-def compute_features(filename="a0001"):
-    # Lengths for each interval.
-    ALENGTH = {
-        "S1":   150,
-        "Sys":  210,
-        "S2":   120,
-        "Dia":  510,
-    }
-
-    # Import data
-    states = custom_loadmat(f"{filename}_states.mat")['assigned_states']
-    pcg = custom_loadmat(f"{filename}_audio.mat")['audio']
-    transitions = get_transitions(states)
-
-    # Get boundaries
-    RR_boundary = boundaries(transitions, 'RR')
-    sys_boundary = boundaries(transitions, 'Sys')
-    dias_boundary = boundaries(transitions, 'Dia')
-    S1_boundary = boundaries(transitions, 'S1')
-    S2_boundary = boundaries(transitions, 'S2')
-
-    ### Section 1: Time Domain Features
-    # Extract Interval Length Functions
-    interval_length_RR   = diff(RR_boundary)
-    interval_length_sys  = diff(sys_boundary)
-    interval_length_S1 = diff(S1_boundary)
-    interval_length_S2 = diff(S2_boundary)
-    interval_length_dias = diff(dias_boundary)
-
-    # Features 1-10
-    mean_RR, std_RR = _mean_std(interval_length_RR)
-    mean_sys, std_sys = _mean_std(interval_length_sys)
-    mean_S1, std_S1 = _mean_std(interval_length_S1)
-    mean_S2, std_S2 = _mean_std(interval_length_S2)
-    mean_dias, std_dias = _mean_std(interval_length_dias)
-
-    mean_interval_lengths = {
-        "RR": (mean_RR, std_RR),
-        "S1": (mean_sys, std_sys),
-        "S2": (mean_S1, std_S1),
-        "sys": (mean_S2, std_S2),
-        "dias": (mean_dias, std_dias),
-    }
-
-    # Features 11-16
-    mean_ratio_sysRR, std_ratio_sysRR = _mean_std(interval_length_sys / interval_length_RR)
-    mean_ratio_diaRR,   std_ratio_diaRR  = _mean_std(interval_length_dias / interval_length_RR)
-    mean_ratio_sysDia,  std_ratio_sysDia = _mean_std(interval_length_sys / interval_length_dias)
-    
-    interval_length_ratios = {
-        "sys_RR": (mean_ratio_sysRR, std_ratio_sysRR),
-        "dia_RR": (mean_ratio_diaRR, std_ratio_diaRR),
-        "sys_dia": (mean_ratio_sysDia, std_ratio_sysDia)
-    }
+    def diff(self, t):
+        return t[1] - t[0]
 
     # Determines the absolute amplitudes from each interval, and computes
     # the mean of each of these as output.
-    def get_mean_abs(intervals):
+    def get_mean_abs(self, intervals):
         res = []
         for interval in intervals:
             interval_abs_amp = [abs(n) for n in interval]
             res.append(np.mean(interval_abs_amp))
         return np.array(res)
 
-    # Extract Amplitude Functions
-    # get intervals for each S1, Ds, S2, Ss
-    S1_intervals = get_intervals(pcg, transitions, 'S1', resize=ALENGTH['S1'])
-    S2_intervals = get_intervals(pcg, transitions, 'S2', resize=ALENGTH['S2'])
-    sys_intervals = get_intervals(pcg, transitions, 'Sys', resize=ALENGTH['Sys'])
-    dias_intervals = get_intervals(pcg, transitions, 'Dia', resize=ALENGTH['Dia'])
+    def get_time_domain_features(self):
+        pcg, transitions = self.load_data()
 
-    mean_abs_S1 = get_mean_abs(S1_intervals)
-    mean_abs_S2 = get_mean_abs(S2_intervals)
-    mean_abs_sys = get_mean_abs(sys_intervals)
-    mean_abs_dias = get_mean_abs(dias_intervals)
+        # Get boundaries
+        RR_boundary = boundaries(transitions, 'RR')
+        sys_boundary = boundaries(transitions, 'Sys')
+        dias_boundary = boundaries(transitions, 'Dia')
+        S1_boundary = boundaries(transitions, 'S1')
+        S2_boundary = boundaries(transitions, 'S2')
 
-    # Features 17-20 (Abs mean amplitude ratio)
-    amplitude_ratios = {
-        "S1_sys": _mean_std(mean_abs_sys / mean_abs_S1),
-        "S2_dias": _mean_std(mean_abs_dias / mean_abs_S2)
-    }
+        # Extract Interval Length Functions
+        interval_length_RR   = self.diff(RR_boundary)
+        interval_length_sys  = self.diff(sys_boundary)
+        interval_length_S1 = self.diff(S1_boundary)
+        interval_length_S2 = self.diff(S2_boundary)
+        interval_length_dias = self.diff(dias_boundary)
 
-    # Features 21-28 (skewness)
-    skew_S1_mean, skew_S1_std  = _mean_std(np.array([skew(interval) for interval in S1_intervals]))
-    skew_S2_mean, skew_S2_std = _mean_std(np.array([skew(interval) for interval in S2_intervals]))
-    skew_sys_mean, skew_sys_std = _mean_std(np.array([skew(interval) for interval in sys_intervals]))
-    skew_dias_mean, skew_dias_std = _mean_std(np.array([skew(interval) for interval in dias_intervals]))
+        # Features 1-10
+        mean_RR, std_RR = self._mean_std(interval_length_RR)
+        mean_sys, std_sys = self._mean_std(interval_length_sys)
+        mean_S1, std_S1 = self._mean_std(interval_length_S1)
+        mean_S2, std_S2 = self._mean_std(interval_length_S2)
+        mean_dias, std_dias = self._mean_std(interval_length_dias)
 
-    skew_values = {
-        "S1": (skew_S1_mean, skew_S1_std),
-        "S2": (skew_S2_mean, skew_S2_std),
-        "sys": (skew_sys_mean, skew_sys_std),
-        "dias": (skew_dias_mean, skew_dias_std),
-    }
+        # Features 11-16
+        mean_ratio_sysRR, std_ratio_sysRR = self._mean_std(interval_length_sys / interval_length_RR)
+        mean_ratio_diaRR, std_ratio_diaRR  = self._mean_std(interval_length_dias / interval_length_RR)
+        mean_ratio_sysDia, std_ratio_sysDia = self._mean_std(interval_length_sys / interval_length_dias)
 
-    # Features 29-36 (kurtosis)
-    kurtosis_S1_mean, kurtosis_S1_std = _mean_std(np.array([kurtosis(interval) for interval in S1_intervals]))
-    kurtosis_S2_mean, kurtosis_S2_std = _mean_std(np.array([kurtosis(interval) for interval in S2_intervals]))
-    kurtosis_sys_mean, kurtosis_sys_std = _mean_std(np.array([kurtosis(interval) for interval in sys_intervals]))
-    kurtosis_dias_mean, kurtosis_dias_std = _mean_std(np.array([kurtosis(interval) for interval in dias_intervals]))
+        # Extract Amplitude Functions
+        # get intervals for each S1, Ds, S2, Ss
+        S1_intervals = get_intervals(pcg, transitions, 'S1', resize=self.ALENGTH['S1'])
+        S2_intervals = get_intervals(pcg, transitions, 'S2', resize=self.ALENGTH['S2'])
+        sys_intervals = get_intervals(pcg, transitions, 'Sys', resize=self.ALENGTH['Sys'])
+        dias_intervals = get_intervals(pcg, transitions, 'Dia', resize=self.ALENGTH['Dia'])
 
-    kurtosis_values = {
-        "S1": (kurtosis_S1_mean, kurtosis_S1_std),
-        "S2": (kurtosis_S2_mean, kurtosis_S2_std),
-        "sys": (kurtosis_sys_mean, kurtosis_sys_std),
-        "dias": (kurtosis_dias_mean, kurtosis_dias_std),
-    }
+        mean_abs_S1 = self.get_mean_abs(S1_intervals)
+        mean_abs_S2 = self.get_mean_abs(S2_intervals)
+        mean_abs_sys = self.get_mean_abs(sys_intervals)
+        mean_abs_dias = self.get_mean_abs(dias_intervals)
 
-    ### Section 2: Frequency domain features
-    def calc_median_power_mean(intervals):
+        # Features 21-28 (skewness)
+        skew_S1_mean, skew_S1_std  = self._mean_std(np.array([skew(interval) for interval in S1_intervals]))
+        skew_S2_mean, skew_S2_std = self._mean_std(np.array([skew(interval) for interval in S2_intervals]))
+        skew_sys_mean, skew_sys_std = self._mean_std(np.array([skew(interval) for interval in sys_intervals]))
+        skew_dias_mean, skew_dias_std = self._mean_std(np.array([skew(interval) for interval in dias_intervals]))
+
+        # Features 29-36 (kurtosis)
+        kurtosis_S1_mean, kurtosis_S1_std = self._mean_std(np.array([kurtosis(interval) for interval in S1_intervals]))
+        kurtosis_S2_mean, kurtosis_S2_std = self._mean_std(np.array([kurtosis(interval) for interval in S2_intervals]))
+        kurtosis_sys_mean, kurtosis_sys_std = self._mean_std(np.array([kurtosis(interval) for interval in sys_intervals]))
+        kurtosis_dias_mean, kurtosis_dias_std = self._mean_std(np.array([kurtosis(interval) for interval in dias_intervals]))
+
+        return [
+            mean_RR, 
+            std_RR,
+            mean_sys, 
+            std_sys,
+            mean_S1, 
+            std_S1,
+            mean_S2, 
+            std_S2,
+            mean_dias,
+            std_dias,
+            mean_ratio_sysRR, 
+            std_ratio_sysRR,
+            mean_ratio_diaRR, 
+            std_ratio_diaRR,
+            mean_ratio_sysDia, 
+            std_ratio_sysDia,
+            self._mean_std(mean_abs_sys / mean_abs_S1)[0],
+            self._mean_std(mean_abs_sys / mean_abs_S1)[1],
+            self._mean_std(mean_abs_dias / mean_abs_S2)[0],
+            self._mean_std(mean_abs_dias / mean_abs_S2)[1],
+            skew_S1_mean,
+            skew_S1_std,
+            skew_S2_mean, 
+            skew_S2_std,
+            skew_sys_mean, 
+            skew_sys_std,
+            skew_dias_mean, 
+            skew_dias_std,
+            kurtosis_S1_mean, 
+            kurtosis_S1_std,
+            kurtosis_S2_mean, 
+            kurtosis_S2_std,
+            kurtosis_sys_mean, 
+            kurtosis_sys_std,
+            kurtosis_dias_mean, 
+            kurtosis_dias_std
+        ]
+
+    def calc_median_power_mean(self, intervals):
         band_medians = {
             "25_45": [],
             "45_65": [],
@@ -171,109 +164,49 @@ def compute_features(filename="a0001"):
 
         return results, results_arr
 
-    # Feature 0-36 (36 median features)
-    median_power_means = {
-        "S1": calc_median_power_mean(S1_intervals)[0],
-        "S2": calc_median_power_mean(S2_intervals)[0],
-        "sys": calc_median_power_mean(sys_intervals)[0],
-        "dias": calc_median_power_mean(dias_intervals)[0],
-    }
-
-    # Extract MFCCs
-    def get_mfcc_means(intervals):
-        mfccs = [[] for i in range(13)]
+    def get_mean_mfccs(self, intervals, num_mfccs=13):
+        mfccs = [[] for i in range(num_mfccs)]
         for interval in intervals:
-            mfcc = librosa.feature.mfcc(y=interval, n_mfcc=13, sr=2000)
-            for i in range(13):
+            mfcc = librosa.feature.mfcc(y=interval, n_mfcc=num_mfccs, sr=2000)
+            for i in range(num_mfccs):
                 mfccs[i].append(mfcc[i])
         results = [np.mean(mfcc) for mfcc in mfccs]
         return results
 
-    # Features 37 - 88 (52 MFCC features)
-    mfcc_means = {
-        "S1": get_mfcc_means(S1_intervals),
-        "S2": get_mfcc_means(S2_intervals),
-        "sys": get_mfcc_means(sys_intervals),
-        "dias": get_mfcc_means(dias_intervals),
-    }
+    def get_frequency_domain_features(self):
+        pcg, transitions = self.load_data()
 
-    def get_spectral_centroid(intervals):
-        scs = []
-        for interval in intervals:
-            sc = librosa.feature.spectral_centroid(y=interval, sr=2000)
-            scs.append(sc)
-        return np.mean(scs)
+        S1_intervals = get_intervals(pcg, transitions, 'S1', resize=self.ALENGTH['S1'])
+        S2_intervals = get_intervals(pcg, transitions, 'S2', resize=self.ALENGTH['S2'])
+        sys_intervals = get_intervals(pcg, transitions, 'Sys', resize=self.ALENGTH['Sys'])
+        dias_intervals = get_intervals(pcg, transitions, 'Dia', resize=self.ALENGTH['Dia'])
 
-    features_arr = [
-        mean_RR, 
-        std_RR,
-        mean_sys, 
-        std_sys,
-        mean_S1, 
-        std_S1,
-        mean_S2, 
-        std_S2,
-        mean_dias,
-        std_dias,
-        mean_ratio_sysRR, 
-        std_ratio_sysRR,
-        mean_ratio_diaRR, 
-        std_ratio_diaRR,
-        mean_ratio_sysDia, 
-        std_ratio_sysDia,
-        _mean_std(mean_abs_sys / mean_abs_S1)[0],
-        _mean_std(mean_abs_sys / mean_abs_S1)[1],
-        _mean_std(mean_abs_dias / mean_abs_S2)[0],
-        _mean_std(mean_abs_dias / mean_abs_S2)[1],
-        skew_S1_mean,
-        skew_S1_std,
-        skew_S2_mean, 
-        skew_S2_std,
-        skew_sys_mean, 
-        skew_sys_std,
-        skew_dias_mean, 
-        skew_dias_std,
-        kurtosis_S1_mean, 
-        kurtosis_S1_std,
-        kurtosis_S2_mean, 
-        kurtosis_S2_std,
-        kurtosis_sys_mean, 
-        kurtosis_sys_std,
-        kurtosis_dias_mean, 
-        kurtosis_dias_std
-    ]
+        # Features 0 - 36
+        median_power_mean_S1 = self.calc_median_power_mean(S1_intervals)[1]
+        median_power_mean_S2 = self.calc_median_power_mean(S2_intervals)[1]
+        median_power_mean_sys = self.calc_median_power_mean(sys_intervals)[1]
+        median_power_mean_dias = self.calc_median_power_mean(dias_intervals)[1]
 
-    features_arr += calc_median_power_mean(S1_intervals)[1]
-    features_arr += calc_median_power_mean(S2_intervals)[1]
-    features_arr += calc_median_power_mean(sys_intervals)[1]
-    features_arr += calc_median_power_mean(dias_intervals)[1]
-    features_arr += get_mfcc_means(S1_intervals)
-    features_arr += get_mfcc_means(S2_intervals)
-    features_arr += get_mfcc_means(sys_intervals)
-    features_arr += get_mfcc_means(dias_intervals)
+        # Features 37 - 88 (52 MFCC features)
+        mfcc_S1 = self.get_mean_mfccs(S1_intervals)
+        mfcc_S2 = self.get_mean_mfccs(S2_intervals)
+        mfcc_sys = self.get_mean_mfccs(sys_intervals)
+        mfcc_dias = self.get_mean_mfccs(dias_intervals)
 
-    features_arr += get_spectral_centroid(S1_intervals)
-    features_arr += get_spectral_centroid(S2_intervals)
-    features_arr += get_spectral_centroid(sys_intervals)
-    features_arr += get_spectral_centroid(dias_intervals)
+        features = [
+            median_power_mean_S1, 
+            median_power_mean_S2, 
+            median_power_mean_sys, 
+            median_power_mean_dias,
+            mfcc_S1,
+            mfcc_S2,
+            mfcc_sys,
+            mfcc_dias
+        ]
 
-    return {
-        "arr": features_arr,
-        "obj": Features(
-            mean_interval_lengths,
-            interval_length_ratios, 
-            amplitude_ratios, 
-            skew_values, 
-            kurtosis_values, 
-            median_power_means, 
-            mfcc_means
-        )
-    }
-
-# print(features.mean_interval_lengths)
-# print(features.interval_length_ratios)
-# print(features.amplitude_ratios)
-# print(features.skew)
-# print(features.kurtosis)
-# print(features.median_power_means)
-# print(features.mfcc_means)
+        flat_features_list = [item for sublist in features for item in sublist]
+        return flat_features_list
+    
+    def get_all_features(self):
+        features = self.get_time_domain_features() + self.get_frequency_domain_features()
+        return features
