@@ -30,7 +30,7 @@ def run_adaboost_pipeline(filepath):
     # Step 2: Get features
     features = get_features_from_audiofile(stripped_fp)
     # TODO Step 3: Invoke model using features
-    return features
+    return predict_adaboost(features)
 
 def get_features_from_audiofile(filepath):
     features_processor = FeaturesProcessor(filepath)
@@ -55,8 +55,8 @@ class Classify(Resource):
         args = request.args
         if "filepath" not in args:
             abort(422)
-        print(args['filepath'])
-        return jsonify(run_adaboost_pipeline(args["filepath"]))
+        classification_result = run_adaboost_pipeline(args["filepath"])
+        return jsonify({'classification': int(classification_result[0])})
 
 
 if __name__ == '__main__':
