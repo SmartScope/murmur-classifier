@@ -13,14 +13,19 @@ api = Api(app)
 # Environment variables
 adaboost_model_filepath = os.getenv('ADABOOST_FILEPATH')
 matlab_engine_path = os.getenv('MATLAB_ENGINE_PATH', '/local/work/matlab18aPy36/lib/python3.6/site-packages')
+matlab_script_path = os.getenv('MATLAB_SCRIPT_PATH', os.path.dirname(os.path.abspath(__file__)) + "/segmentation")
 
 sys.path.append(matlab_engine_path)
-import matlab
+import matlab.engine
+# Instantiate matlab engine
+matlab_eng = matlab.engine.start_matlab()
+matlab_eng.cd(matlab_script_path, nargout=0)
 
 # TODO: Extract this into a utils file
 # Input = path to wav file
 def run_adaboost_pipeline(filepath):
     # TODO Step 1: Perform segmentation using MATLAB script
+    matlab_eng.segmentOneRecording(filepath, nargout=0)
     stripped_fp = filepath.split(".wav")[0]
     # Step 2: Get features
     features = get_features_from_audiofile(stripped_fp)

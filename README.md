@@ -13,7 +13,8 @@
     * Run `python setup.py install --prefix="/local/work/matlab18aPy36"`
 * Set the following environment variables:
     * `ADABOOST_FILEPATH` --> Path to Adaboost classifier model
-    * `MATLAB_ENGINE_PATH` --> "/local/work/matlab18aPy36/lib/python3.6/site-packages"
+    * `MATLAB_SCRIPT_PATH` --> Path to directory containing MATLAB segmentation script
+    * `MATLAB_ENGINE_PATH` --> "/local/work/matlab18aPy36/lib/python3.6/site-packages", or wherever your MATLAB engine is saved if not on a Mac
 
 ### Running the REST API
 
