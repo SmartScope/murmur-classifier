@@ -1,6 +1,6 @@
 import numpy as np
 
-from scipy.signal import resample, welch
+from scipy.signal import welch
 from scipy import signal
 from scipy.io import loadmat
 from scipy.stats import kurtosis, skew
@@ -8,8 +8,7 @@ from scipy.stats import kurtosis, skew
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
-from .segmentation_util import *
-import matplotlib.pyplot as plt
+from segmentation_util import *
 
 from statistics import median
 
@@ -41,6 +40,10 @@ class FeaturesProcessor:
 
     def get_time_domain_features(self):
         pcg, transitions = self.load_data()
+
+        # Ignore audio files that do not have at least 32 cycles
+        # if min(32, len(transitions) - 1) < 32:
+        #     return None
 
         # Get boundaries
         RR_boundary = boundaries(transitions, 'RR')
@@ -80,6 +83,22 @@ class FeaturesProcessor:
         mean_abs_sys = self.get_mean_abs(sys_intervals)
         mean_abs_dias = self.get_mean_abs(dias_intervals)
 
+        # Edge case: if any of the arrays contain 0, replace with mean of array
+        # to prevent divide by 0 error.
+        mean_abs_S1[mean_abs_S1 == 0] = np.mean(mean_abs_S1)
+        mean_abs_S2[mean_abs_S2 == 0] = np.mean(mean_abs_S2)
+        mean_abs_sys[mean_abs_sys == 0] = np.mean(mean_abs_sys)
+        mean_abs_dias[mean_abs_dias == 0] = np.mean(mean_abs_dias)
+
+        mean_ratio_sysS1 = self._mean_std(mean_abs_sys / mean_abs_S1)[0]
+        std_ratio_sysS1 = self._mean_std(mean_abs_sys / mean_abs_S1)[1]
+        mean_ratio_diasS2 = self._mean_std(mean_abs_dias / mean_abs_S2)[0]
+        std_ratio_diasS2 = self._mean_std(mean_abs_dias / mean_abs_S2)[1]
+
+        # if np.isnan(mean_ratio_sysS1).any() or np.isnan(std_ratio_sysS1).any() or np.isnan(mean_ratio_diasS2).any() or np.isnan(std_ratio_diasS2).any():
+        #     print(self.filename)
+        #     return None
+
         # Features 21-28 (skewness)
         skew_S1_mean, skew_S1_std  = self._mean_std(np.array([skew(interval) for interval in S1_intervals]))
         skew_S2_mean, skew_S2_std = self._mean_std(np.array([skew(interval) for interval in S2_intervals]))
@@ -109,10 +128,10 @@ class FeaturesProcessor:
             std_ratio_diaRR,
             mean_ratio_sysDia, 
             std_ratio_sysDia,
-            self._mean_std(mean_abs_sys / mean_abs_S1)[0],
-            self._mean_std(mean_abs_sys / mean_abs_S1)[1],
-            self._mean_std(mean_abs_dias / mean_abs_S2)[0],
-            self._mean_std(mean_abs_dias / mean_abs_S2)[1],
+            mean_ratio_sysS1,
+            std_ratio_sysS1,
+            mean_ratio_diasS2,
+            std_ratio_diasS2,
             skew_S1_mean,
             skew_S1_std,
             skew_S2_mean, 
@@ -176,10 +195,17 @@ class FeaturesProcessor:
     def get_frequency_domain_features(self):
         pcg, transitions = self.load_data()
 
+        # Ignore audio files that do not have at least 32 cycles
+        # if min(32, len(transitions) - 1) < 32:
+        #     return None
+
         S1_intervals = get_intervals(pcg, transitions, 'S1', resize=self.ALENGTH['S1'])
         S2_intervals = get_intervals(pcg, transitions, 'S2', resize=self.ALENGTH['S2'])
         sys_intervals = get_intervals(pcg, transitions, 'Sys', resize=self.ALENGTH['Sys'])
         dias_intervals = get_intervals(pcg, transitions, 'Dia', resize=self.ALENGTH['Dia'])
+
+        # if np.isnan(S1_intervals).any() or np.isnan(S2_intervals).any() or np.isnan(sys_intervals).any() or np.isnan(dias_intervals).any():
+        #     return None
 
         # Features 0 - 36
         median_power_mean_S1 = self.calc_median_power_mean(S1_intervals)[1]
@@ -208,5 +234,11 @@ class FeaturesProcessor:
         return flat_features_list
     
     def get_all_features(self):
-        features = self.get_time_domain_features() + self.get_frequency_domain_features()
+        time_domain_features = self.get_time_domain_features()
+        freqeuncy_domain_features = self.get_frequency_domain_features()
+        
+        if time_domain_features is None or freqeuncy_domain_features is None:
+            return None
+        
+        features = time_domain_features + freqeuncy_domain_features
         return features

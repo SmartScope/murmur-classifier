@@ -2,6 +2,12 @@ import numpy as np
 from scipy.signal import resample
 from scipy.io import loadmat
 
+class Base:
+    def remove_prefix(self, text, prefix):
+        if text.startswith(prefix):
+            return text[len(prefix):]
+        return text 
+
 def custom_loadmat(file):
     """
     Simple auxiliary function to load .mat files without

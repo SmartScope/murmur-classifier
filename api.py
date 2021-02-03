@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, abort
 from flask_restplus import Resource, Api
 from classification.features import FeaturesProcessor
+from classifier import Classifier
 import pickle
 import os
 import sys
@@ -24,24 +25,21 @@ matlab_eng.cd(matlab_script_path, nargout=0)
 # TODO: Extract this into a utils file
 # Input = path to wav file
 def run_adaboost_pipeline(filepath):
-    # TODO Step 1: Perform segmentation using MATLAB script
+    # Step 1: Perform segmentation using MATLAB script
     matlab_eng.segmentOneRecording(filepath, nargout=0)
     stripped_fp = filepath.split(".wav")[0]
+
     # Step 2: Get features
     features = get_features_from_audiofile(stripped_fp)
-    # TODO Step 3: Invoke model using features
-    return predict_adaboost(features)
+
+    # Step 3: Invoke model using features
+    classifier = Classifier()
+    return classifier.predict(features, adaboost_model_filepath)
 
 def get_features_from_audiofile(filepath):
     features_processor = FeaturesProcessor(filepath)
     features = [features_processor.get_all_features()]
     return features
-
-# Make a prediction using our Adaboost classifier
-def predict_adaboost(features):
-    # Load the model from disk
-    loaded_model = pickle.load(open(adaboost_model_filepath, 'rb'))
-    return loaded_model.predict(features)
 
 # Create a RESTful resource
 @api.route('/healthcheck')
