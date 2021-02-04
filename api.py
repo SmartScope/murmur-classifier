@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, abort
 from flask_restplus import Resource, Api
 from classification.features import FeaturesProcessor
 from classifier import Classifier
+from cnn import CNN
 import pickle
 import os
 import sys
@@ -34,12 +35,25 @@ def run_adaboost_pipeline(filepath):
 
     # Step 3: Invoke model using features
     classifier = Classifier()
-    return classifier.predict(features, adaboost_model_filepath)
+    prediction = predict(features, adaboost_model_filepath)
+
+    return prediction
 
 def get_features_from_audiofile(filepath):
     features_processor = FeaturesProcessor(filepath)
     features = [features_processor.get_all_features()]
     return features
+
+def run_cnn_pipeline(filepath):
+    # Step 1: Perform segmentation using MATLAB script
+    matlab_eng.segmentOneRecording(filepath, nargout=0)
+    stripped_fp = filepath.split(".wav")[0]
+
+    # Step 2: Invoke model
+    cnn = CNN()
+    prediction = cnn.predict(stripped_fp)
+
+    return prediction
 
 # Create a RESTful resource
 @api.route('/healthcheck')
@@ -47,8 +61,8 @@ class HelloWorld(Resource):
     def get(self):
         return {'status': 'OK'}
 
-@api.route('/classify')
-class Classify(Resource):
+@api.route('/classify_adaboost')
+class ClassifyAdaBoost(Resource):
     def get(self):
         args = request.args
         if "filepath" not in args:
@@ -56,6 +70,17 @@ class Classify(Resource):
         classification_result = run_adaboost_pipeline(args["filepath"])
         return jsonify({'classification': int(classification_result[0])})
 
+@api.route('/classify_cnn')
+class ClassifyCNN(Resource):
+    def get(self):
+        args = request.args
+        if "filepath" not in args:
+            abort(422)
+        
+        classification_result = run_cnn_pipeline(args["filepath"])
+        return jsonify({
+            'classification': int(classification_result)
+        })
 
 if __name__ == '__main__':
     # Start a development server
