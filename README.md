@@ -22,6 +22,7 @@ Run the following command from the root directory of this project: `python api.p
 
 ### Running the Electron app
 
+```
 sudo apt update
 sudo apt install nodejs git npm
 sudo npm install -g yarn
@@ -32,5 +33,6 @@ cd my_app
 vue add electron-builder
 yarn install
 yarn run electron:serve
+```
 
 Follow this link: https://www.beekeeperstudio.io/blog/building-electron-windows-ubuntu-wsl2
