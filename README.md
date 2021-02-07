@@ -1,6 +1,8 @@
 # murmur-classifier
 
-### REST API Setup Instructions
+## REST API 
+
+### Setup Instructions
 
 * Install Python 3.6.x. I would recommend using pyenv (https://github.com/pyenv/pyenv) so you can dynamically switch between Python versions.
 * Create a Python virtual environment (optional) 
@@ -20,19 +22,21 @@
 
 Run the following command from the root directory of this project: `python api.py`
 
-### Running the Electron app
+## Electron App
 
-```
-sudo apt update
-sudo apt install nodejs git npm
-sudo npm install -g yarn
-sudo apt install libnss3-dev libgdk-pixbuf2.0-dev libgtk-3-dev libxss-dev
-sudo yarn global add @vue/cli
-vue create --default my_app
-cd my_app
-vue add electron-builder
-yarn install
-yarn run electron:serve
-```
+### Setup instructions
 
-Follow this link: https://www.beekeeperstudio.io/blog/building-electron-windows-ubuntu-wsl2
+* Install nodejs, npm, and yarn:
+   * Note: need npm version >= 10.17.0
+   * On MacOS: `brew install node npm yarn`
+   * On Linux: `sudo apt install nodejs git npm` and `sudo npm install -g yarn`
+* Install other system dependencies:
+   * On MacOS: `brew install libnss3-dev libgdk-pixbuf2.0-dev libgtk-3-dev libxss-dev`
+   * On Linux: `sudo apt install libnss3-dev libgdk-pixbuf2.0-dev libgtk-3-dev libxss-dev`
+* `cd my_app` and install project dependencies:
+   * `yarn install`
+   
+### Running the App
+
+Run the following from `my_app` directory: `yarn run electron:serve`.
+   * Note: no further instructions needed on MacOS, but may need to follow these addl steps if using WSL https://www.beekeeperstudio.io/blog/building-electron-windows-ubuntu-wsl2
