@@ -33,6 +33,9 @@ Run the following command from the root directory of this project: `python api.p
 * Install other system dependencies:
    * On MacOS: `brew install libnss3-dev libgdk-pixbuf2.0-dev libgtk-3-dev libxss-dev`
    * On Linux: `sudo apt install libnss3-dev libgdk-pixbuf2.0-dev libgtk-3-dev libxss-dev`
+* Install Vue CLI and electron tools
+   * `sudo yarn global add @vue/cli`
+   * `vue add electron-builder`
 * `cd my_app` and install project dependencies:
    * `yarn install`
    
