@@ -19,3 +19,20 @@
 ### Running the REST API
 
 Run the following command from the root directory of this project: `python api.py`
+
+### Running the Electron app
+
+```
+sudo apt update
+sudo apt install nodejs git npm
+sudo npm install -g yarn
+sudo apt install libnss3-dev libgdk-pixbuf2.0-dev libgtk-3-dev libxss-dev
+sudo yarn global add @vue/cli
+vue create --default my_app
+cd my_app
+vue add electron-builder
+yarn install
+yarn run electron:serve
+```
+
+Follow this link: https://www.beekeeperstudio.io/blog/building-electron-windows-ubuntu-wsl2
