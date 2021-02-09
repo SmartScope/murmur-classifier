@@ -22,24 +22,3 @@
 
 Run the following command from the root directory of this project: `python api.py`
 
-## Electron App
-
-### Setup instructions
-
-* Install nodejs, npm, and yarn:
-   * Note: need npm version >= 10.17.0
-   * On MacOS: `brew install node npm yarn`
-   * On Linux: `sudo apt install nodejs git npm` and `sudo npm install -g yarn`
-* Install other system dependencies:
-   * On MacOS: `brew install libnss3-dev libgdk-pixbuf2.0-dev libgtk-3-dev libxss-dev`
-   * On Linux: `sudo apt install libnss3-dev libgdk-pixbuf2.0-dev libgtk-3-dev libxss-dev`
-* Install Vue CLI and electron tools
-   * `sudo yarn global add @vue/cli`
-   * `vue add electron-builder`
-* `cd my_app` and install project dependencies:
-   * `yarn install`
-   
-### Running the App
-
-Run the following from `my_app` directory: `yarn run electron:serve`.
-   * Note: no further instructions needed on MacOS, but may need to follow these addl steps if using WSL https://www.beekeeperstudio.io/blog/building-electron-windows-ubuntu-wsl2
