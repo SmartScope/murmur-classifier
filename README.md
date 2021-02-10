@@ -22,3 +22,6 @@
 
 Run the following command from the root directory of this project: `python api.py`
 
+### Imports
+
+Add the path to the root of this repo to your PYTHONPATH env var if you're getting import errors.
