@@ -2,7 +2,7 @@ import json
 import numpy as np
 from sklearn.model_selection import train_test_split
 import tensorflow.keras as keras
-from cnn_preprocess import CNNPreprocess
+from classification.cnn_preprocess import CNNPreprocess
 
 class CNN:
     def prepare_datasets(self, X, y, test_size, validation_size, should_add_axis=False):
