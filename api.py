@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request, abort
 from flask_restplus import Resource, Api
 from classification.features import FeaturesProcessor
-from classifier import Classifier
-from cnn import CNN
+from classification.classifier import Classifier
+from classification.cnn import CNN
 import pickle
 import os
 import sys
@@ -35,7 +35,7 @@ def run_adaboost_pipeline(filepath):
 
     # Step 3: Invoke model using features
     classifier = Classifier()
-    prediction = predict(features, adaboost_model_filepath)
+    prediction = classifier.predict(features, adaboost_model_filepath)
 
     return prediction
 
