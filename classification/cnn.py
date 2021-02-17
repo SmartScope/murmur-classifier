@@ -2,7 +2,7 @@ import json
 import numpy as np
 from sklearn.model_selection import train_test_split
 import tensorflow.keras as keras
-from classification.cnn_preprocess import CNNPreprocess
+from cnn_preprocess import CNNPreprocess
 import matplotlib.pyplot as plt
 
 class CNN:
