@@ -4,19 +4,6 @@ import numpy as np
 
 # Driver script to train and test a CNN model.
 
-def test_cnn(file_sets):
-    cnn_preprocess = CNNPreprocess(file_sets=file_sets)
-    data = cnn_preprocess.preprocess_data()
-
-    X = np.array(data["values"])
-    y = np.array(data["labels"])
-
-    cnn = CNN()
-    test_error, test_accuracy = cnn.test_model(X, y)
-
-    print("Accuracy on the test set is: {}".format(test_accuracy))
-    print("Error on the test set is: {}".format(test_error))
-
 def train_cnn(file_sets):
     cnn_preprocess = CNNPreprocess(file_sets=file_sets)
     data = cnn_preprocess.preprocess_data()
@@ -25,7 +12,10 @@ def train_cnn(file_sets):
     y = np.array(data["labels"])
 
     cnn = CNN()
-    cnn.train_model(X, y)
+    test_error, test_accuracy = cnn.train_model(X, y)
+
+    print("Accuracy on the test set is: {}".format(test_accuracy))
+    print("Error on the test set is: {}".format(test_error))
 
 file_sets = [
     (["./challenge_data/training-a/a" + str(i).zfill(4) for i in range(1, 410)], "./challenge_data/training-a/"),

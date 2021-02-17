@@ -54,26 +54,46 @@ class CNNPreprocess(Base):
         transitions = get_transitions(pcg_states)
 
         num_freq_bands = 4
-        num_samples = 400 # 0.4 s
-        num_cardiac_cycles = min(32, len(transitions) - 1) # cap at 32 cycles per signal
+        num_samples = 500 # Empirically computed
+        num_cardiac_cycles = 32 # 32 cycles per signal
 
-        if num_cardiac_cycles < 32:
-            return None
-
-        # Data shape: 32 cycles x 1500 samples / cycle x 4 bands
+        # Data shape: 32 cycles x 600 samples / cycle x 4 bands
         X = np.zeros(shape=(num_cardiac_cycles, num_samples, num_freq_bands))
 
         for cardiac_cycle in range(num_cardiac_cycles):
             for freq_band in range(num_freq_bands):
+
+                # If there are < 32 cardiac cycles in the audio file, populate the delta of missing cardiac
+                # cycles with the mean of the samples in the contained cardiac cycles.
+                if len(transitions) - 1 <= cardiac_cycle:
+                    band_mean = np.mean(X[:len(transitions), :, freq_band])
+                    X[cardiac_cycle, :, freq_band] = band_mean
+                    continue
+
+                # Extract the amplitude values associated with the frequency band and cardiac cycle.
                 values = pcg_decomposed[freq_band][transitions[cardiac_cycle]:transitions[cardiac_cycle + 1]]
+
+                # If there are no PCG values, take the mean of all preceding cardiac cycles at the frequency
+                # band, and populate the current cardiac cycle's samples.
+                if len(values) == 0:
+                    band_mean = np.mean(X[:len(transitions), :, freq_band])
+                    X[cardiac_cycle, :, freq_band] = band_mean
+                    continue
                 
+                # If there are > 600 samples, trim the PCG samples to 600 samples.
                 if len(values) > num_samples:
-                    values = values[:len(values)-2500]
+                    values = values[:len(values)-num_samples]
                 
+                # Populate the samples associated with cardiac cycle.
                 for sample in range(len(X[cardiac_cycle])):
                     if sample < len(values):
                         X[cardiac_cycle][sample][freq_band] = values[sample]
-        
+                
+                # If there are < 600 samples, populate the remaining samples with the mean of the existing samples.
+                if len(values) < num_samples:
+                    mean_of_values = np.mean(values)
+                    X[cardiac_cycle, len(values):num_samples, freq_band] = mean_of_values
+
         return X
 
     def preprocess_file(self, filename):
@@ -92,7 +112,7 @@ class CNNPreprocess(Base):
         data["values"].append(X.tolist())
         return data
 
-    def preprocess_data(self):
+    def preprocess_data(self, debug = False):
         """
         Converts audio file dataset into data for input into CNN. Use this to preprocess
         files for training.
@@ -132,8 +152,9 @@ class CNNPreprocess(Base):
                 else:
                     data["labels"].append(0)
         
-        # save values to json file
-        # with open("/Users/manthanshah/Desktop/cnn_data.json", "w") as fp:
-        #     json.dump(data, fp, indent=4)
+        if debug:
+            # save values to json file
+            with open("/Users/manthanshah/Desktop/cnn_data.json", "w") as fp:
+                json.dump(data, fp, indent=4)
 
         return data
