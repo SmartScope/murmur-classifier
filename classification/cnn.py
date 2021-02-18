@@ -138,7 +138,7 @@ class CNN:
 
         return test_error, test_accuracy
 
-    def predict(self, filename, debug_mode = False, model_location = "./cnn_model"):
+    def predict(self, filename, ensemble = False, model_location = "./cnn_model"):
         """
         Makes a prediction.
 
@@ -157,10 +157,10 @@ class CNN:
 
         # Perform prediction
         prediction = reconstructed_model.predict(np.array(data["values"]))
-
-        if debug_mode:
-            print(prediction)
         
+        if ensemble:
+            return prediction
+
         # Get index with max value
         predicted_index = np.argmax(prediction, axis=1)
 
