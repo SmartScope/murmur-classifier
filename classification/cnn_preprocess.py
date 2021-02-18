@@ -57,7 +57,7 @@ class CNNPreprocess(Base):
         num_samples = 500 # Empirically computed
         num_cardiac_cycles = 32 # 32 cycles per signal
 
-        # Data shape: 32 cycles x 600 samples / cycle x 4 bands
+        # Data shape: 32 cycles x 500 samples / cycle x 4 bands
         X = np.zeros(shape=(num_cardiac_cycles, num_samples, num_freq_bands))
 
         for cardiac_cycle in range(num_cardiac_cycles):
@@ -80,7 +80,7 @@ class CNNPreprocess(Base):
                     X[cardiac_cycle, :, freq_band] = band_mean
                     continue
                 
-                # If there are > 600 samples, trim the PCG samples to 600 samples.
+                # If there are > 500 samples, trim the PCG samples to 600 samples.
                 if len(values) > num_samples:
                     values = values[:len(values)-num_samples]
                 
@@ -89,7 +89,7 @@ class CNNPreprocess(Base):
                     if sample < len(values):
                         X[cardiac_cycle][sample][freq_band] = values[sample]
                 
-                # If there are < 600 samples, populate the remaining samples with the mean of the existing samples.
+                # If there are < 500 samples, populate the remaining samples with the mean of the existing samples.
                 if len(values) < num_samples:
                     mean_of_values = np.mean(values)
                     X[cardiac_cycle, len(values):num_samples, freq_band] = mean_of_values
