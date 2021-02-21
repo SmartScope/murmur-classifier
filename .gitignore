@@ -1,3 +1,4 @@
 **/challenge_data
+**/classification/__pycache__
 *.pyc
 .idea/

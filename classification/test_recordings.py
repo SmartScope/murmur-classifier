@@ -1,7 +1,7 @@
 import os
 from cnn import CNN
-from classifier import Classifier
-from features import FeaturesProcessor
+# from classifier import Classifier
+# from features import FeaturesProcessor
 
 root_dir = "./test_data"
 file_set = []
@@ -23,13 +23,13 @@ for file_name in file_set:
 
     print(file_name, prediction)
 
-print("ADABOOST")
+# print("ADABOOST")
 
-for file_name in file_set:
-    features_processor = FeaturesProcessor(file_name)
-    features = [features_processor.get_all_features()]
+# for file_name in file_set:
+#     features_processor = FeaturesProcessor(file_name)
+#     features = [features_processor.get_all_features()]
 
-    classifier = Classifier()
-    prediction = classifier.predict(features, ensemble=True)
+#     classifier = Classifier()
+#     prediction = classifier.predict(features, ensemble=True)
 
-    print(prediction)
+#     print(prediction)

@@ -2,7 +2,7 @@ import json
 import numpy as np
 from sklearn.model_selection import train_test_split
 import tensorflow.keras as keras
-from classification.cnn_preprocess import CNNPreprocess
+from cnn_preprocess import CNNPreprocess
 import matplotlib.pyplot as plt
 
 class CNN:
@@ -151,12 +151,16 @@ class CNN:
         # Preprocess the file
         cnn_preprocess = CNNPreprocess()
         data = cnn_preprocess.preprocess_file(filename)
+        X = np.array(data["values"])
 
         # Retrieve the model
         reconstructed_model = keras.models.load_model(model_location)
 
+        reconstructed_model.summary()
+        print(X.shape)
+
         # Perform prediction
-        prediction = reconstructed_model.predict(np.array(data["values"]))
+        prediction = reconstructed_model.predict(X)
         
         if ensemble:
             return prediction

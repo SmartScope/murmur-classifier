@@ -3,7 +3,7 @@ import os
 import math
 import librosa
 import scipy.signal as signal
-from classification.segmentation_util import custom_loadmat, get_transitions, Base
+from segmentation_util import custom_loadmat, get_transitions, Base
 import numpy as np
 
 class CNNPreprocess(Base):
