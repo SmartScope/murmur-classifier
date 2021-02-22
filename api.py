@@ -14,6 +14,7 @@ api = Api(app)
 
 # Environment variables
 adaboost_model_filepath = os.getenv('ADABOOST_FILEPATH')
+cnn_model_filepath = os.getenv("CNN_FILEPATH")
 matlab_engine_path = os.getenv('MATLAB_ENGINE_PATH', '/local/work/matlab18aPy36/lib/python3.6/site-packages')
 matlab_script_path = os.getenv('MATLAB_SCRIPT_PATH', os.path.dirname(os.path.abspath(__file__)) + "/segmentation")
 
@@ -25,7 +26,7 @@ matlab_eng.cd(matlab_script_path, nargout=0)
 
 # TODO: Extract this into a utils file
 # Input = path to wav file
-def run_adaboost_pipeline(filepath):
+def run_adaboost_pipeline(filepath, ensemble = False):
     # Step 1: Perform segmentation using MATLAB script
     matlab_eng.segmentOneRecording(filepath, nargout=0)
     stripped_fp = filepath.split(".wav")[0]
@@ -35,7 +36,7 @@ def run_adaboost_pipeline(filepath):
 
     # Step 3: Invoke model using features
     classifier = Classifier()
-    prediction = classifier.predict(features, adaboost_model_filepath)
+    prediction = classifier.predict(features, ensemble, adaboost_model_filepath)
 
     return prediction
 
@@ -44,14 +45,14 @@ def get_features_from_audiofile(filepath):
     features = [features_processor.get_all_features()]
     return features
 
-def run_cnn_pipeline(filepath):
+def run_cnn_pipeline(filepath, ensemble = False):
     # Step 1: Perform segmentation using MATLAB script
     matlab_eng.segmentOneRecording(filepath, nargout=0)
     stripped_fp = filepath.split(".wav")[0]
 
     # Step 2: Invoke model
     cnn = CNN()
-    prediction = cnn.predict(stripped_fp)
+    prediction = cnn.predict(stripped_fp, ensemble, cnn_model_filepath)
 
     return prediction
 
@@ -81,6 +82,26 @@ class ClassifyCNN(Resource):
         return jsonify({
             'classification': int(classification_result)
         })
+
+@api.route('/classify_ensemble')
+class ClassifyEnsemble(Resource):
+    def get(self):
+        args = request.args
+        if "filepath" not in args:
+            abort(422)
+        
+        filepath = args["filepath"]
+        adaboost_result = run_adaboost_pipeline(filepath, ensemble=True)[0]
+        cnn_result = run_cnn_pipeline(filepath, ensemble=True)[0]
+
+        if adaboost_result[1] > 0.6 or cnn_result[1] > 0.6:
+            return jsonify({
+                'classification': int(1)
+            })
+        else:
+            return jsonify({
+                'classification': int(0)
+            })
 
 if __name__ == '__main__':
     # Start a development server

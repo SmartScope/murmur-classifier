@@ -2,7 +2,8 @@ import json
 import numpy as np
 from sklearn.model_selection import train_test_split
 import tensorflow.keras as keras
-from classification.cnn_preprocess import CNNPreprocess
+from cnn_preprocess import CNNPreprocess
+import matplotlib.pyplot as plt
 
 class CNN:
     def prepare_datasets(self, X, y, test_size, validation_size, should_add_axis=False):
@@ -34,6 +35,37 @@ class CNN:
 
         return X_train, X_validation, X_test, y_train, y_validation, y_test
 
+    def plot_history(self, history, create_accuracy_plot = False):
+        """
+        Plots accuracy/loss for training/validation set as a function of the epochs
+
+        Args:
+            history: Training history of model
+        """
+
+        if create_accuracy_plot:
+            fig, axs = plt.subplots(2)
+        else:
+            fig, axs = plt.subplots(1)
+
+        # create error sublpot
+        axs[0].plot(history.history["loss"], label="train error")
+        axs[0].plot(history.history["val_loss"], label="test error")
+        axs[0].set_ylabel("Error")
+        axs[0].set_xlabel("Epoch")
+        axs[0].legend(loc="upper right")
+        axs[0].set_title("Error eval")
+
+        if create_accuracy_plot:
+            # create accuracy sublpot
+            axs[1].plot(history.history["accuracy"], label="train accuracy")
+            axs[1].plot(history.history["val_accuracy"], label="test accuracy")
+            axs[1].set_ylabel("Accuracy")
+            axs[1].legend(loc="lower right")
+            axs[1].set_title("Accuracy eval")
+
+        plt.show()
+
     def build_model(self, input_shape):
         """
         Generates CNN model.
@@ -52,7 +84,7 @@ class CNN:
         model.add(keras.layers.MaxPooling2D((2, 2), padding='same'))
 
         # 2nd conv layer
-        model.add(keras.layers.Conv2D(4, (5, 5), activation='relu'))
+        model.add(keras.layers.Conv2D(8, (5, 5), activation='relu'))
         model.add(keras.layers.MaxPooling2D((2, 2), padding='same'))
         model.add(keras.layers.Dropout(0.25))
 
@@ -68,48 +100,19 @@ class CNN:
 
     def train_model(self, X, y, model_filename = "./cnn_model"):
         """
-        Trains and saves a CNN model for production.
+        Trains and saves a CNN model.
 
         Args:
             X (ndarray): Input data
             y (ndarray): Target value for input data
             model_filename (string): path and name of CNN model to be saved
         Returns:
-            model: CNN model
-        """
-
-        # Create network
-        input_shape = (X.shape[1], X.shape[2], X.shape[3])
-        model = self.build_model(input_shape)
-
-        # Compile model
-        optimizer = keras.optimizers.Adam(learning_rate=0.001)
-        model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
-        model.summary()
-
-        # Train the CNN
-        model.fit(X, y, batch_size=32, epochs=30)
-
-        # Save the model
-        model.save(model_filename)
-
-        return model
-
-    def test_model(self, X, y):
-        """
-        Trains a CNN model for testing purposes with accuracy metrics.
-
-        Args:
-            X (ndarray): Input data
-            y (ndarray): Target value for input data
-        Returns:
             test_error: error of the the testing data split
             test_accuracy: accuracy of the testing data split
         """
 
         # Get train, validation, test splits
-        X_train, X_validation, X_test, y_train, y_validation, y_test = self.prepare_datasets(X, y, 0.25, 0.2)
+        X_train, X_validation, X_test, y_train, y_validation, y_test = self.prepare_datasets(X, y, 0.1, 0.1)
 
         # Create network
         input_shape = (X_train.shape[1], X_train.shape[2], X_train.shape[3])
@@ -121,15 +124,21 @@ class CNN:
 
         model.summary()
 
-        # Train the CNN
-        model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=32, epochs=30)
+        # Train the model
+        history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=32, epochs=30)
 
-        # Evaluate the CNN on the test set
+        # Plot accuracy/error for training and validation
+        self.plot_history(history)
+
+        # Evaluate the model on the test set
         test_error, test_accuracy = model.evaluate(X_test, y_test, verbose=2)
+
+        # Save the model
+        model.save(model_filename)
 
         return test_error, test_accuracy
 
-    def predict(self, filename, model_location = "./cnn_model"):
+    def predict(self, filename, ensemble = False, model_location = "./cnn_model"):
         """
         Makes a prediction.
 
@@ -142,13 +151,20 @@ class CNN:
         # Preprocess the file
         cnn_preprocess = CNNPreprocess()
         data = cnn_preprocess.preprocess_file(filename)
+        X = np.array(data["values"])
 
         # Retrieve the model
         reconstructed_model = keras.models.load_model(model_location)
 
+        reconstructed_model.summary()
+        print(X.shape)
+
         # Perform prediction
-        prediction = reconstructed_model.predict(data["values"])
+        prediction = reconstructed_model.predict(X)
         
+        if ensemble:
+            return prediction
+
         # Get index with max value
         predicted_index = np.argmax(prediction, axis=1)
 

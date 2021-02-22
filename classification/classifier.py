@@ -60,6 +60,9 @@ class Classifier(Base):
         model = clf.fit(X, y)
         pickle.dump(model, open(filename, 'wb'))
 
-    def predict(self, X, filename):
-        loaded_model = pickle.load(open(filename, 'rb'))
+    def predict(self, X, ensemble = False, model_path = "./adaboost_classifier.sav"):
+        loaded_model = pickle.load(open(model_path, 'rb'))
+        if ensemble:
+            return loaded_model.predict_proba(X)
+        
         return loaded_model.predict(X)

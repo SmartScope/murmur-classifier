@@ -1,0 +1,5 @@
+v1: 85.5% acc, 37.6% loss (16/8/8 with l2)
+v2: 83.95% acc, 39.2% loss (16/8 with l2)
+v3: 84.6% acc, 38.6% loss (8/4 without l2)
+v4: 83.64% acc, 28.56% loss (8/4/4 without l2)
+v5: 81.79% acc, 39.3% loss (8/8 with l2)
