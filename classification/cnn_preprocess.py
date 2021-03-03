@@ -80,9 +80,9 @@ class CNNPreprocess(Base):
                     X[cardiac_cycle, :, freq_band] = band_mean
                     continue
                 
-                # If there are > 500 samples, trim the PCG samples to 600 samples.
+                # If there are > 500 samples, trim the PCG samples to 500 samples.
                 if len(values) > num_samples:
-                    values = values[:len(values)-num_samples]
+                    values = values[:num_samples]
                 
                 # Populate the samples associated with cardiac cycle.
                 for sample in range(len(X[cardiac_cycle])):

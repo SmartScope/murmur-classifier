@@ -8,7 +8,7 @@ from scipy.stats import kurtosis, skew
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
-from classification.segmentation_util import *
+from segmentation_util import *
 
 from statistics import median
 

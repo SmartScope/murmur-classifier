@@ -1,0 +1,23 @@
+V1: 16/8/8 with L2
+- Validation: 85.5% accuracy, 37.6% loss
+- Test: 100% (10/10)
+- Spread between normal/abnormal: very weak
+
+V2: 16/8 with L2
+- Validation: 83.95% accuracy, 39.2% loss
+- Test: 100% (10/10)
+- Spread between normal/abnormal: neutral
+
+V3: 8/4 without L2
+- Validation: 84.6% accuracy, 38.6% loss
+- Test: 100% (10/10)
+- Spread between normal/abnormal: strong
+
+V4: 8/4/4 without L2
+- Validation: 83.6% accuracy, 28.6% loss
+- Test: 100% (10/10)
+- Spread between normal/abnormal: very strong
+
+V5: 8/8 with L2
+- Validation: 81.8% accuracy, 39.3% loss
+- Test: neutral/strong

@@ -35,34 +35,28 @@ class CNN:
 
         return X_train, X_validation, X_test, y_train, y_validation, y_test
 
-    def plot_history(self, history, create_accuracy_plot = False):
-        """
-        Plots accuracy/loss for training/validation set as a function of the epochs
-
-        Args:
-            history: Training history of model
+    def plot_history(self, history):
+        """Plots accuracy/loss for training/validation set as a function of the epochs
+            :param history: Training history of model
+            :return:
         """
 
-        if create_accuracy_plot:
-            fig, axs = plt.subplots(2)
-        else:
-            fig, axs = plt.subplots(1)
+        fig, axs = plt.subplots(2)
+
+        # create accuracy sublpot
+        axs[0].plot(history.history["accuracy"], label="train accuracy")
+        axs[0].plot(history.history["val_accuracy"], label="test accuracy")
+        axs[0].set_ylabel("Accuracy")
+        axs[0].legend(loc="lower right")
+        axs[0].set_title("Accuracy eval")
 
         # create error sublpot
-        axs[0].plot(history.history["loss"], label="train error")
-        axs[0].plot(history.history["val_loss"], label="test error")
-        axs[0].set_ylabel("Error")
-        axs[0].set_xlabel("Epoch")
-        axs[0].legend(loc="upper right")
-        axs[0].set_title("Error eval")
-
-        if create_accuracy_plot:
-            # create accuracy sublpot
-            axs[1].plot(history.history["accuracy"], label="train accuracy")
-            axs[1].plot(history.history["val_accuracy"], label="test accuracy")
-            axs[1].set_ylabel("Accuracy")
-            axs[1].legend(loc="lower right")
-            axs[1].set_title("Accuracy eval")
+        axs[1].plot(history.history["loss"], label="train error")
+        axs[1].plot(history.history["val_loss"], label="test error")
+        axs[1].set_ylabel("Error")
+        axs[1].set_xlabel("Epoch")
+        axs[1].legend(loc="upper right")
+        axs[1].set_title("Error eval")
 
         plt.show()
 
@@ -80,11 +74,14 @@ class CNN:
         model = keras.Sequential()
 
         # 1st conv layer
-        model.add(keras.layers.Conv2D(8, (5, 5), activation='relu', input_shape=input_shape))
+        model.add(keras.layers.Conv2D(16, (5, 5), activation='relu', input_shape=input_shape))
         model.add(keras.layers.MaxPooling2D((2, 2), padding='same'))
 
         # 2nd conv layer
-        model.add(keras.layers.Conv2D(8, (5, 5), activation='relu'))
+        model.add(keras.layers.Conv2D(4, (5, 5), activation='relu'))
+        model.add(keras.layers.MaxPooling2D((2, 2), padding='same'))
+
+        model.add(keras.layers.Conv2D(4, (5, 5), activation='relu'))
         model.add(keras.layers.MaxPooling2D((2, 2), padding='same'))
         model.add(keras.layers.Dropout(0.25))
 
@@ -112,7 +109,7 @@ class CNN:
         """
 
         # Get train, validation, test splits
-        X_train, X_validation, X_test, y_train, y_validation, y_test = self.prepare_datasets(X, y, 0.1, 0.1)
+        X_train, X_validation, X_test, y_train, y_validation, y_test = self.prepare_datasets(X, y, 0.2, 0.25)
 
         # Create network
         input_shape = (X_train.shape[1], X_train.shape[2], X_train.shape[3])
@@ -155,9 +152,6 @@ class CNN:
 
         # Retrieve the model
         reconstructed_model = keras.models.load_model(model_location)
-
-        reconstructed_model.summary()
-        print(X.shape)
 
         # Perform prediction
         prediction = reconstructed_model.predict(X)
