@@ -74,7 +74,7 @@ class CNN:
         model = keras.Sequential()
 
         # 1st conv layer
-        model.add(keras.layers.Conv2D(16, (5, 5), activation='relu', input_shape=input_shape))
+        model.add(keras.layers.Conv2D(8, (5, 5), activation='relu', input_shape=input_shape))
         model.add(keras.layers.MaxPooling2D((2, 2), padding='same'))
 
         # 2nd conv layer
