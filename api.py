@@ -21,7 +21,8 @@ api = Api(app)
 # Environment variables
 adaboost_model_filepath = os.getenv('ADABOOST_FILEPATH')
 cnn_model_filepath = os.getenv("CNN_FILEPATH")
-matlab_engine_path = os.getenv('MATLAB_ENGINE_PATH', '/local/work/matlab18aPy36/lib/python3.6/site-packages')
+matlab_engine_path = os.getenv('MATLAB_ENGINE_PATH', '/local/work/matlab18aPy36/lib/python3.6/site-packages') # Austin's Path
+# matlab_engine_path = os.getenv('MATLAB_ENGINE_PATH', '/usr/local/work/matlab20aPy37/lib/python3.7/site-packages') # James' Path
 matlab_script_path = os.getenv('MATLAB_SCRIPT_PATH', os.path.dirname(os.path.abspath(__file__)) + "/segmentation")
 
 sys.path.append(matlab_engine_path)
