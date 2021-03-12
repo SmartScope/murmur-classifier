@@ -6,6 +6,12 @@ from classification.cnn import CNN
 import pickle
 import os
 import sys
+# Hack https://github.com/matplotlib/matplotlib/issues/13414
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import wave
 
 #  Create a Flask WSGI application
 app = Flask(__name__)
@@ -56,6 +62,27 @@ def run_cnn_pipeline(filepath, ensemble = False):
 
     return prediction
 
+def plot_wav_file(filepath):
+    # read wave file
+    spf1 = wave.open(filepath, "r")
+
+    # Extract Raw Audio from Wav File
+    signal = spf1.readframes(-1)
+    signal = np.fromstring(signal, "Int16")
+
+    # FFT
+    N = len(signal)
+
+    plt.plot(np.linspace(0, N/5512.5, num=N), signal / max(abs(signal)))
+
+    plt.xlabel('Time (s)')
+    plt.ylabel('Normalized Amplitude')
+
+    plot_fp = filepath.split(".wav")[0] + ".png"
+    plt.savefig(plot_fp)
+    plt.clf()
+    return plot_fp
+
 # Create a RESTful resource
 @api.route('/healthcheck')
 class HelloWorld(Resource):
@@ -102,6 +129,18 @@ class ClassifyEnsemble(Resource):
             return jsonify({
                 'classification': int(0)
             })
+
+@api.route('/plot_wavfile')
+class ClassifyCNN(Resource):
+    def get(self):
+        args = request.args
+        if "filepath" not in args:
+            abort(422)
+
+        plot_fp = plot_wav_file(args["filepath"])
+        return jsonify({
+            'plot_path': plot_fp
+        })
 
 if __name__ == '__main__':
     # Start a development server
