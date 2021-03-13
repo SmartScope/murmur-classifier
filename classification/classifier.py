@@ -1,10 +1,10 @@
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold, cross_val_score
-from sklearn.metrics import classification_report, accuracy_score, make_scorer
-from features import FeaturesProcessor
+from classification.features import FeaturesProcessor
 import pickle
 import numpy as np
-from segmentation_util import Base
+from sklearn.metrics import classification_report, accuracy_score, make_scorer
+from classification.segmentation_util import Base
 
 class Classifier(Base):
     def __init__(self, file_sets = None):

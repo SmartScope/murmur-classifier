@@ -6,6 +6,12 @@ from classification.cnn import CNN
 import pickle
 import os
 import sys
+# Hack https://github.com/matplotlib/matplotlib/issues/13414
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import wave
 
 #  Create a Flask WSGI application
 app = Flask(__name__)
@@ -15,7 +21,8 @@ api = Api(app)
 # Environment variables
 adaboost_model_filepath = os.getenv('ADABOOST_FILEPATH')
 cnn_model_filepath = os.getenv("CNN_FILEPATH")
-matlab_engine_path = os.getenv('MATLAB_ENGINE_PATH', '/local/work/matlab18aPy36/lib/python3.6/site-packages')
+matlab_engine_path = os.getenv('MATLAB_ENGINE_PATH', '/local/work/matlab18aPy36/lib/python3.6/site-packages') # Austin's Path
+# matlab_engine_path = os.getenv('MATLAB_ENGINE_PATH', '/usr/local/work/matlab20aPy37/lib/python3.7/site-packages') # James' Path
 matlab_script_path = os.getenv('MATLAB_SCRIPT_PATH', os.path.dirname(os.path.abspath(__file__)) + "/segmentation")
 
 sys.path.append(matlab_engine_path)
@@ -55,6 +62,27 @@ def run_cnn_pipeline(filepath, ensemble = False):
     prediction = cnn.predict(stripped_fp, ensemble, cnn_model_filepath)
 
     return prediction
+
+def plot_wav_file(filepath):
+    # read wave file
+    spf1 = wave.open(filepath, "r")
+
+    # Extract Raw Audio from Wav File
+    signal = spf1.readframes(-1)
+    signal = np.fromstring(signal, "Int16")
+
+    # FFT
+    N = len(signal)
+
+    plt.plot(np.linspace(0, N/5512.5, num=N), signal / max(abs(signal)))
+
+    plt.xlabel('Time (s)')
+    plt.ylabel('Normalized Amplitude')
+
+    plot_fp = filepath.split(".wav")[0] + ".png"
+    plt.savefig(plot_fp)
+    plt.clf()
+    return plot_fp
 
 # Create a RESTful resource
 @api.route('/healthcheck')
@@ -102,6 +130,18 @@ class ClassifyEnsemble(Resource):
             return jsonify({
                 'classification': int(0)
             })
+
+@api.route('/plot_wavfile')
+class ClassifyCNN(Resource):
+    def get(self):
+        args = request.args
+        if "filepath" not in args:
+            abort(422)
+
+        plot_fp = plot_wav_file(args["filepath"])
+        return jsonify({
+            'plot_path': plot_fp
+        })
 
 if __name__ == '__main__':
     # Start a development server

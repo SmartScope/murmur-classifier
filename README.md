@@ -17,6 +17,7 @@
     * `ADABOOST_FILEPATH` --> Path to Adaboost classifier model
     * `MATLAB_SCRIPT_PATH` --> Path to directory containing MATLAB segmentation script
     * `MATLAB_ENGINE_PATH` --> "/local/work/matlab18aPy36/lib/python3.6/site-packages", or wherever your MATLAB engine is saved if not on a Mac
+    * `PYTHONPATH` --> Path to murmur_classifier folder
 
 ### Running the REST API
 

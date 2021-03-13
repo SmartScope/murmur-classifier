@@ -2,7 +2,7 @@ import json
 import numpy as np
 from sklearn.model_selection import train_test_split
 import tensorflow.keras as keras
-from cnn_preprocess import CNNPreprocess
+from classification.cnn_preprocess import CNNPreprocess
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 from sklearn.model_selection import StratifiedKFold
