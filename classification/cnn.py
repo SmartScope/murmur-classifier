@@ -4,6 +4,8 @@ from sklearn.model_selection import train_test_split
 import tensorflow.keras as keras
 from cnn_preprocess import CNNPreprocess
 import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report
+from sklearn.model_selection import StratifiedKFold
 
 class CNN:
     def prepare_datasets(self, X, y, test_size, validation_size, should_add_axis=False):
@@ -75,25 +77,47 @@ class CNN:
 
         # 1st conv layer
         model.add(keras.layers.Conv2D(8, (5, 5), activation='relu', input_shape=input_shape))
-        model.add(keras.layers.MaxPooling2D((2, 2), padding='same'))
+        model.add(keras.layers.MaxPooling2D((2, 2), strides=(2, 2), padding='same'))
 
         # 2nd conv layer
         model.add(keras.layers.Conv2D(4, (5, 5), activation='relu'))
-        model.add(keras.layers.MaxPooling2D((2, 2), padding='same'))
-
-        model.add(keras.layers.Conv2D(4, (5, 5), activation='relu'))
-        model.add(keras.layers.MaxPooling2D((2, 2), padding='same'))
+        model.add(keras.layers.MaxPooling2D((2, 2), strides=(2, 2), padding='same'))
         model.add(keras.layers.Dropout(0.25))
 
         # Flatten output and feed it into dense layer
         model.add(keras.layers.Flatten())
-        model.add(keras.layers.Dense(20, activation='relu'))
+        model.add(keras.layers.Dense(20, activation='relu', kernel_regularizer='l2'))
         model.add(keras.layers.Dropout(0.5))
 
         # Output layer
         model.add(keras.layers.Dense(2, activation='sigmoid'))
 
         return model
+
+    def validate_model(self, X, y):
+        kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=np.random.seed(7))
+        reports = []
+        for train, test in kfold.split(X, y):
+            X_train, y_train, X_test, y_test = X[train], y[train], X[test], y[test]
+
+            # Create network
+            input_shape = (X_train.shape[1], X_train.shape[2], X_train.shape[3])
+            model = self.build_model(input_shape)
+
+            # Compile model
+            optimizer = keras.optimizers.Adam(learning_rate=0.0001)
+            model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+            # Train the model
+            model.fit(X_train, y_train, batch_size=1, epochs=30)
+
+            # Generate report
+            y_pred = np.argmax(model.predict(X_test), axis=1)
+            report = classification_report(y_test, y_pred)
+            reports.append(report)
+
+        return reports
+
 
     def train_model(self, X, y, model_filename = "./cnn_model"):
         """
@@ -109,7 +133,7 @@ class CNN:
         """
 
         # Get train, validation, test splits
-        X_train, X_validation, X_test, y_train, y_validation, y_test = self.prepare_datasets(X, y, 0.2, 0.25)
+        X_train, X_validation, X_test, y_train, y_validation, y_test = self.prepare_datasets(X, y, 0.1, 0.25)
 
         # Create network
         input_shape = (X_train.shape[1], X_train.shape[2], X_train.shape[3])
@@ -122,7 +146,7 @@ class CNN:
         model.summary()
 
         # Train the model
-        history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=32, epochs=30)
+        history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=1, epochs=30)
 
         # Plot accuracy/error for training and validation
         self.plot_history(history)

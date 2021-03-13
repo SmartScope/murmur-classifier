@@ -89,10 +89,13 @@ class CNNPreprocess(Base):
                     if sample < len(values):
                         X[cardiac_cycle][sample][freq_band] = values[sample]
                 
-                # If there are < 500 samples, populate the remaining samples with the mean of the existing samples.
+                # If there are < 500 samples, populate the remaining samples with repeating cycles of the existing samples.
                 if len(values) < num_samples:
-                    mean_of_values = np.mean(values)
-                    X[cardiac_cycle, len(values):num_samples, freq_band] = mean_of_values
+                    repeated_samples = np.array(list(values) * ((num_samples // len(values)) + 1))
+                    repeated_samples = repeated_samples[:num_samples]
+                    X[cardiac_cycle, :, freq_band] = repeated_samples
+                    # mean_of_values = np.mean(values)
+                    # X[cardiac_cycle, len(values):num_samples, freq_band] = mean_of_values
 
         return X
 

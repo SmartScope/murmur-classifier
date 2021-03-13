@@ -41,10 +41,6 @@ class FeaturesProcessor:
     def get_time_domain_features(self):
         pcg, transitions = self.load_data()
 
-        # Ignore audio files that do not have at least 32 cycles
-        # if min(32, len(transitions) - 1) < 32:
-        #     return None
-
         # Get boundaries
         RR_boundary = boundaries(transitions, 'RR')
         sys_boundary = boundaries(transitions, 'Sys')
@@ -94,10 +90,6 @@ class FeaturesProcessor:
         std_ratio_sysS1 = self._mean_std(mean_abs_sys / mean_abs_S1)[1]
         mean_ratio_diasS2 = self._mean_std(mean_abs_dias / mean_abs_S2)[0]
         std_ratio_diasS2 = self._mean_std(mean_abs_dias / mean_abs_S2)[1]
-
-        # if np.isnan(mean_ratio_sysS1).any() or np.isnan(std_ratio_sysS1).any() or np.isnan(mean_ratio_diasS2).any() or np.isnan(std_ratio_diasS2).any():
-        #     print(self.filename)
-        #     return None
 
         # Features 21-28 (skewness)
         skew_S1_mean, skew_S1_std  = self._mean_std(np.array([skew(interval) for interval in S1_intervals]))
@@ -195,17 +187,10 @@ class FeaturesProcessor:
     def get_frequency_domain_features(self):
         pcg, transitions = self.load_data()
 
-        # Ignore audio files that do not have at least 32 cycles
-        # if min(32, len(transitions) - 1) < 32:
-        #     return None
-
         S1_intervals = get_intervals(pcg, transitions, 'S1', resize=self.ALENGTH['S1'])
         S2_intervals = get_intervals(pcg, transitions, 'S2', resize=self.ALENGTH['S2'])
         sys_intervals = get_intervals(pcg, transitions, 'Sys', resize=self.ALENGTH['Sys'])
         dias_intervals = get_intervals(pcg, transitions, 'Dia', resize=self.ALENGTH['Dia'])
-
-        # if np.isnan(S1_intervals).any() or np.isnan(S2_intervals).any() or np.isnan(sys_intervals).any() or np.isnan(dias_intervals).any():
-        #     return None
 
         # Features 0 - 36
         median_power_mean_S1 = self.calc_median_power_mean(S1_intervals)[1]

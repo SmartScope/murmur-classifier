@@ -1,5 +1,6 @@
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold, cross_val_score
+from sklearn.metrics import classification_report, accuracy_score, make_scorer
 from features import FeaturesProcessor
 import pickle
 import numpy as np
@@ -19,6 +20,7 @@ class Classifier(Base):
             # Get features
             X = []
             for fname in file_set:
+                print(fname)
                 features_processor = FeaturesProcessor(fname)
                 features = features_processor.get_all_features()
                 X.append(features)
@@ -51,9 +53,13 @@ class Classifier(Base):
         model = GridSearchCV(AdaBoostClassifier(), param_grid=param_grid)
         return model
 
+    def classification_report_with_accuracy_score(self, y_true, y_pred):
+        print(classification_report(y_true, y_pred)) # print classification report
+        return accuracy_score(y_true, y_pred) # return accuracy score
+
     def evaluate_model(self, X, y, model):
-        cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=10, random_state=1)
-        n_scores = cross_val_score(model, X, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise')
+        cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=1, random_state=1)
+        n_scores = cross_val_score(model, X, y, cv=cv, scoring=make_scorer(self.classification_report_with_accuracy_score))
         return np.mean(n_scores), np.std(n_scores)
 
     def train_model(self, clf, X, y, filename = "adaboost_classifier.sav"):

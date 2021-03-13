@@ -21,13 +21,13 @@ for file_name in file_set:
         continue
     print(file_name, prediction)
 
-print("\nADABOOST\n")
+# print("\nADABOOST\n")
 
-for file_name in file_set:
-    features_processor = FeaturesProcessor(file_name)
-    features = [features_processor.get_all_features()]
+# for file_name in file_set:
+#     features_processor = FeaturesProcessor(file_name)
+#     features = [features_processor.get_all_features()]
 
-    classifier = Classifier()
-    prediction = classifier.predict(features, ensemble=True)
+#     classifier = Classifier()
+#     prediction = classifier.predict(features, ensemble=True)
 
-    print(prediction)
+#     print(prediction)
