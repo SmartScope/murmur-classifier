@@ -113,7 +113,7 @@ class CNNPreprocess(Base):
         data["values"].append(X.tolist())
         return data
 
-    def preprocess_data(self, debug = False):
+    def preprocess_data(self):
         """
         Converts audio file dataset into data for input into CNN. Use this to preprocess
         files for training.
@@ -141,7 +141,6 @@ class CNNPreprocess(Base):
                     abnormal_records.add(l)
 
             for filename in file_set:
-                print(filename)
                 X = self.process(filename)
 
                 if X is None:
@@ -152,10 +151,6 @@ class CNNPreprocess(Base):
                     data["labels"].append(1)
                 else:
                     data["labels"].append(0)
-        
-        if debug:
-            # save values to json file
-            with open("/Users/manthanshah/Desktop/cnn_data.json", "w") as fp:
-                json.dump(data, fp, indent=4)
+            print(f"Processed a file set")
 
         return data
