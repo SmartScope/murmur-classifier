@@ -106,7 +106,7 @@ class CNN:
         # Add early stopping callback to prevent overfitting
         # stop training if validation loss doesn't improve after 15 epochs 
         callback_es = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', verbose=1, 
-                                                    patience=20, restore_best_weights=False)
+                                                    patience=25, restore_best_weights=False)
 
         # Train the model
         # Weigh positives (abnormal examples) more when training 
@@ -129,8 +129,10 @@ class CNN:
 
             # Generate report
             y_pred = np.argmax(model.predict(X_test), axis=1)
-            report = classification_report(y_test, y_pred)
+            report = classification_report(y_test, y_pred, output_dict=True)
             reports.append(report)
+            
+            print(report)
 
         return reports
     
@@ -143,7 +145,7 @@ class CNN:
 
         # Generate report
         y_pred = np.argmax(model.predict(X_test), axis=1)
-        report = classification_report(y_test, y_pred)
+        report = classification_report(y_test, y_pred, output_dict=True)
 
         return report
 
