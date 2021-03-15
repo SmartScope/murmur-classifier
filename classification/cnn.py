@@ -94,7 +94,7 @@ class CNN:
 
         return model
     
-    def fit_model(self, X, y, plot_history=False):
+    def train_model(self, X, y, plot_history=False):
         # Create network
         input_shape = (X.shape[1], X.shape[2], X.shape[3])
         model = self.build_model(input_shape)
@@ -102,9 +102,16 @@ class CNN:
         # Compile model
         optimizer = keras.optimizers.Adam(learning_rate=0.0007)
         model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        
+        # Add early stopping callback to prevent overfitting
+        # stop training if validation loss doesn't improve after 15 epochs 
+        callback_es = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', verbose=1, 
+                                                    patience=20, restore_best_weights=False)
 
         # Train the model
-        history = model.fit(X, y, batch_size=32, epochs=200)
+        # Weigh positives (abnormal examples) more when training 
+        history = model.fit(X, y, batch_size=32, epochs=200, validation_split=0.1, 
+                            callbacks=[callback_es], class_weight={0: 1, 1: 5})
         
         if plot_history:
             # Plot accuracy/error for training and validation
@@ -118,7 +125,7 @@ class CNN:
         for train, test in kfold.split(X, y):
             X_train, y_train, X_test, y_test = X[train], y[train], X[test], y[test]
             
-            model = self.fit_model(X_train, y_train)
+            model = self.train_model(X_train, y_train)
 
             # Generate report
             y_pred = np.argmax(model.predict(X_test), axis=1)
@@ -132,7 +139,7 @@ class CNN:
         # perform 80-20 train-test split
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
         
-        model = self.fit_model(X_train, y_train)
+        model = self.train_model(X_train, y_train)
 
         # Generate report
         y_pred = np.argmax(model.predict(X_test), axis=1)
@@ -141,9 +148,9 @@ class CNN:
         return report
 
 
-    def train_model(self, X, y, model_filename = "./cnn_model"):
+    def save_model(self, X, y, model_filename = "./cnn_model"):
         """
-        Trains CNN model on entire dataset.
+        Trains CNN model on entire dataset and saves it
 
         Args:
             X (ndarray): Input data
@@ -154,7 +161,7 @@ class CNN:
             test_accuracy: accuracy of the testing data split
         """
         
-        model = self.fit_model(X, y)
+        model = self.train_model(X, y)
         # Save the model
         model.save(model_filename)
 
