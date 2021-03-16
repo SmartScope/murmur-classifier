@@ -62,9 +62,11 @@ class Classifier(Base):
         n_scores = cross_val_score(model, X, y, cv=cv, scoring=make_scorer(self.classification_report_with_accuracy_score))
         return np.mean(n_scores), np.std(n_scores)
 
-    def train_model(self, clf, X, y, filename = "adaboost_classifier.sav"):
+    def train_model(self, clf, X, y, filename = None):
         model = clf.fit(X, y)
-        pickle.dump(model, open(filename, 'wb'))
+        if filename:
+            pickle.dump(model, open(filename, 'wb'))
+        return model
 
     def predict(self, X, ensemble = False, model_path = "./adaboost_classifier.sav"):
         loaded_model = pickle.load(open(model_path, 'rb'))
