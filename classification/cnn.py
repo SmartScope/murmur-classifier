@@ -93,35 +93,66 @@ class CNN:
         model.add(keras.layers.Dense(2, activation='sigmoid'))
 
         return model
+    
+    def train_model(self, X, y, plot_history=False):
+        # Create network
+        input_shape = (X.shape[1], X.shape[2], X.shape[3])
+        model = self.build_model(input_shape)
 
-    def validate_model(self, X, y):
+        # Compile model
+        optimizer = keras.optimizers.Adam(learning_rate=0.0007)
+        model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        
+        # Add early stopping callback to prevent overfitting
+        # stop training if validation loss doesn't improve after 15 epochs 
+        callback_es = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', verbose=1, 
+                                                    patience=25, restore_best_weights=False)
+
+        # Train the model
+        # Weigh positives (abnormal examples) more when training 
+        history = model.fit(X, y, batch_size=32, epochs=200, validation_split=0.1, 
+                            callbacks=[callback_es], class_weight={0: 1, 1: 5})
+        
+        if plot_history:
+            # Plot accuracy/error for training and validation
+            self.plot_history(history)
+        
+        return model
+
+    def validate_model_kfold(self, X, y):
         kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=np.random.seed(7))
         reports = []
         for train, test in kfold.split(X, y):
             X_train, y_train, X_test, y_test = X[train], y[train], X[test], y[test]
-
-            # Create network
-            input_shape = (X_train.shape[1], X_train.shape[2], X_train.shape[3])
-            model = self.build_model(input_shape)
-
-            # Compile model
-            optimizer = keras.optimizers.Adam(learning_rate=0.0001)
-            model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
-            # Train the model
-            model.fit(X_train, y_train, batch_size=1, epochs=30)
+            
+            model = self.train_model(X_train, y_train)
 
             # Generate report
             y_pred = np.argmax(model.predict(X_test), axis=1)
-            report = classification_report(y_test, y_pred)
+            report = classification_report(y_test, y_pred, output_dict=True)
             reports.append(report)
+            
+            print(report)
 
         return reports
+    
+    
+    def validate_model_train_test(self, X, y):
+        # perform 80-20 train-test split
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+        
+        model = self.train_model(X_train, y_train)
+
+        # Generate report
+        y_pred = np.argmax(model.predict(X_test), axis=1)
+        report = classification_report(y_test, y_pred, output_dict=True)
+
+        return report
 
 
-    def train_model(self, X, y, model_filename = "./cnn_model"):
+    def save_model(self, X, y, model_filename = "./cnn_model"):
         """
-        Trains and saves a CNN model.
+        Trains CNN model on entire dataset and saves it
 
         Args:
             X (ndarray): Input data
@@ -131,33 +162,10 @@ class CNN:
             test_error: error of the the testing data split
             test_accuracy: accuracy of the testing data split
         """
-
-        # Get train, validation, test splits
-        X_train, X_validation, X_test, y_train, y_validation, y_test = self.prepare_datasets(X, y, 0.1, 0.25)
-
-        # Create network
-        input_shape = (X_train.shape[1], X_train.shape[2], X_train.shape[3])
-        model = self.build_model(input_shape)
-
-        # Compile model
-        optimizer = keras.optimizers.Adam(learning_rate=0.0001)
-        model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
-        model.summary()
-
-        # Train the model
-        history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=1, epochs=30)
-
-        # Plot accuracy/error for training and validation
-        self.plot_history(history)
-
-        # Evaluate the model on the test set
-        test_error, test_accuracy = model.evaluate(X_test, y_test, verbose=2)
-
+        
+        model = self.train_model(X, y)
         # Save the model
         model.save(model_filename)
-
-        return test_error, test_accuracy
 
     def predict(self, filename, ensemble = False, model_location = "./cnn_model"):
         """
